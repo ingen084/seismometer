@@ -47,7 +47,7 @@ public:
         SPI.begin();
     }
 
-    void read(uint16_t* data)
+    void read(uint16_t (&data)[3])
     {
         for (auto a = 0; a < 3; a++)
             data[a] = readChannel(a);
