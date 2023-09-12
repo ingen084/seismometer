@@ -100,7 +100,7 @@ void setup() {
 
 #ifdef ESP32
     xTaskCreatePinnedToCore(measureTask, "Measure", 4096, NULL, 10, NULL, 0x01);
-    xTaskCreatePinnedToCore(oledDisplayTask, "OLEDDisplay", 2048, NULL, 5, NULL, 0x01);
+    xTaskCreatePinnedToCore(oledDisplayTask, "OLEDDisplay", 4096, NULL, 5, NULL, 0x01);
     xTaskCreatePinnedToCore(serialCommandTask, "Serial", 4096, NULL, 5, NULL, 0x01);
 #else
     xTaskCreateAffinitySet(measureTask, "Measure", 4096, NULL, 10, 0x01, NULL);
