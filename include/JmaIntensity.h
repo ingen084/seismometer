@@ -14,6 +14,34 @@ typedef enum
     JMA_INT_7 = 9,
 } JmaIntensity;
 
+const char* jmaIntensityToChar(JmaIntensity intensity) {
+    switch (intensity)
+    {
+        case JMA_INT_0:
+            return "0";
+        case JMA_INT_1:
+            return "1";
+        case JMA_INT_2:
+            return "2";
+        case JMA_INT_3:
+            return "3";
+        case JMA_INT_4:
+            return "4";
+        case JMA_INT_5_LOWER:
+            return "5-";
+        case JMA_INT_5_UPPER:
+            return "5+";
+        case JMA_INT_6_LOWER:
+            return "6-";
+        case JMA_INT_6_UPPER:
+            return "6+";
+        case JMA_INT_7:
+            return "7";
+        default:
+            return "?";
+    }
+}
+
 JmaIntensity getJmaIntensity(float rawIntensity)
 {
     if (rawIntensity >= 6.5)

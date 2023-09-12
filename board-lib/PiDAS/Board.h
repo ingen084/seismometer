@@ -15,12 +15,17 @@
 
 #include "IntensityProcessor.h"
 
+// main.cpp のシリアルコマンドで使用する ADC ステップあたりの gal
+#define SEISMOMETER_ADC_STEP (1.0f / (4095.0f / 5.0f) * 980.665f)
+
+void printNmea(const char *format, ...);
+void printErrorNmea(const char *id);
+void serialCommandTask(void *pvParameters);
+
 #define ADJUST_PIN D16
 
 IntensityProcessor *processor;
 QueueHandle_t displayIntensityQueue;
-
-void printNmea(const char *format, ...);
 
 void measureTask(void *pvParameters) {
     auto xLastWakeTime = xTaskGetTickCount();
@@ -36,8 +41,7 @@ void measureTask(void *pvParameters) {
 
     while (1) {
         mcp3204.read(rawData);
-
-        // MEMO: 震度計算しない場合はここで終了
+        printNmea("XSRAW,%d,%d,%d", rawData[0], rawData[1], rawData[2]);
 
         // ADCの返り値を gal に変換する
         // (測定値) / ADCのレンジ / フルレンジの加速度 * 1G
@@ -47,8 +51,8 @@ void measureTask(void *pvParameters) {
         processor->process(sample);
 
         // 100Hz で動かす
-        if (!xTaskDelayUntil(&xLastWakeTime, configTICK_RATE_HZ / 100)) {
-            Serial.println("Measure task dropped");
+        if (!xTaskDelayUntil(&xLastWakeTime, configTICK_RATE_HZ / 100) && Serial) {
+            printErrorNmea("MEASURE_DROPPED");
         }
     }
 }
@@ -110,11 +114,12 @@ void setup() {
     processor = new IntensityProcessor([](float sample[3]) {
         printNmea("XSACC,%.3f,%.3f,%.3f", sample[0], sample[1], sample[2]);
     }, [](float rawInt) {
-        printNmea("XSINT,%.3f,%.2f", -1.0, rawInt);
+        printNmea("XSINT,%.3f,%.2f", -1.0, processor->getIsStable() ? rawInt : NAN);
         xQueueOverwrite(displayIntensityQueue, &rawInt);
     });
     xTaskCreateAffinitySet(measureTask, "Measure", 1024, NULL, 10, 0x01, NULL);
-    xTaskCreateAffinitySet(ledDisplayTask, "LedDisplay", 512, NULL, 4, 0x02, NULL);
+    xTaskCreateAffinitySet(ledDisplayTask, "LedDisplay", 512, NULL, 4, 0x01, NULL);
+    xTaskCreateAffinitySet(serialCommandTask, "Serial", 1024, NULL, 5, 0x01, NULL);
 
     vTaskDelete(NULL);  /* delete loopTask. */
 }

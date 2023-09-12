@@ -294,6 +294,8 @@ const int bitmap_size[10][2] = {
 
 class SSD1306Display {
     Adafruit_SSD1306 *display;
+	const char *calibrate = "-\\|/";
+	byte calibrateIndex = 0;
 
 public:
     // 初期化
@@ -310,34 +312,50 @@ public:
         this->display->clearDisplay();
         this->display->drawBitmap(0, 4, bitmap_init, 128, 55, WHITE);
         this->display->setTextSize(1);
+		auto version = "v" + String(APP_VERSION);
+        this->display->setCursor(SCREEN_WIDTH - version.length() * 6 - 1, 44);
+        this->display->print(version);
         this->display->setCursor(36, 54);
-        this->display->println("Initializing...");
+        this->display->print("Initializing...");
         this->display->display();
     }
 
     // 起動時の状態表示
-    void stabilityAnimate() {
+    void stabilityAnimate(float rawInt, float stdDev) {
         this->display->clearDisplay();
         this->display->drawBitmap(0, 4, bitmap_init, 128, 55, WHITE);
         this->display->setTextSize(1);
-        this->display->setCursor(36, 54);
-        this->display->println("Calibrating ...");
+        this->display->setCursor(36, 46);
+        this->display->print("Stationary");
+        this->display->setCursor(54, 54);
+        this->display->print("checking..." + String(calibrate[calibrateIndex++]));
+        this->display->setCursor(0, 0);
+        this->display->printf("%.1f(%.2f)", rawInt, stdDev);
         this->display->display();
+		if (calibrateIndex >= 5)
+			calibrateIndex = 0;
     }
 
     // 震度表示
-    void updateIntensity(JmaIntensity scale, float rawInt) {
+    void displayIntensity(JmaIntensity scale, float rawInt, bool hideDisplay, JmaIntensity maxScale) {
         this->display->clearDisplay();
-        this->display->setTextSize(2);
-        this->display->setCursor(3, 50);
-        this->display->println("calc:" + String(rawInt, 1));
-        if (scale > 0) {
-            this->display->setTextSize(1);
-            this->display->setCursor(4, 6);
-            this->display->println("Intensity");
-            this->display->drawBitmap(2, 19, bitmap_array[9], 59, 29, WHITE);
-            this->display->drawBitmap(64, 1, bitmap_array[scale-1], bitmap_size[scale-1][0], bitmap_size[scale-1][1], WHITE);
-        }
+		if (scale != maxScale) {
+			this->display->setTextSize(2);
+			this->display->setCursor(3, 50);
+			this->display->println("Max: " + String(jmaIntensityToChar(maxScale)));
+		}
+		if (!hideDisplay) {
+			if (scale > 0) {
+				this->display->setTextSize(1);
+				this->display->setCursor(4, 6);
+				this->display->println("Intensity");
+				this->display->drawBitmap(2, 19, bitmap_array[9], 59, 29, WHITE);
+				this->display->drawBitmap(64, 1, bitmap_array[scale-1], bitmap_size[scale-1][0], bitmap_size[scale-1][1], WHITE);
+			}
+			this->display->setTextSize(1);
+			this->display->setCursor(105, 55);
+			this->display->println(String(rawInt, 1));
+		}
         this->display->display();
     }
 };

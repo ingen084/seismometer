@@ -30,7 +30,8 @@ class IntensityProcessor {
     IntensityFilter filter;
 
     float rawIntHistory[PROCESS_SAMPLE_GROUP_COUNT];
-    int stabilityCheckCount = 0;
+    unsigned int rawIntIndex = 0;
+    unsigned int stabilityCheckCount = 0;
     bool isStable = false;
 public:
     IntensityProcessor(void (*highpassFilteredCallback)(float[3]), void (*intensityProcessedCallback)(float)) {
@@ -44,6 +45,23 @@ public:
     void setToUnstable() {
         isStable = false;
         stabilityCheckCount = 0;
+    }
+
+    float calcStdDev() {
+        // 平均を求める
+        auto sum = 0.0f;
+        for (auto i = 0; i < PROCESS_SAMPLE_GROUP_COUNT; i++)
+            sum += rawIntHistory[i];
+        auto average = sum / PROCESS_SAMPLE_GROUP_COUNT;
+
+        // 分散を求める
+        sum = 0;
+        for (auto i = 0; i < PROCESS_SAMPLE_GROUP_COUNT; i++)
+            sum += (rawIntHistory[i] - average) * (rawIntHistory[i] - average);
+        auto variance = sum / PROCESS_SAMPLE_GROUP_COUNT;
+
+        // 標準偏差を求める
+        return sqrt(variance);
     }
 
     void process(float (&sample)[3]) {            
@@ -89,35 +107,19 @@ public:
         }
         // Serial.printf("us: %d v: %f\n", micros() - us, lastMaxValue);
 
-        // float rawInt = NAN;
         if (lastMaxValue > 0)
         {
             // 小数第3位を四捨五入して小数第2位を切り捨てる
             auto rawInt = floor(round((2.0f * log10(lastMaxValue) + 0.94f) * 100.0f) / 10.0f) / 10.0f;
 
+            rawIntHistory[rawIntIndex++] = rawInt;
+            if (rawIntIndex >= PROCESS_SAMPLE_GROUP_COUNT)
+                rawIntIndex = 0;
+
             // 安定していない場合は安定しているかチェックする
-            if (!isStable) {
-                rawIntHistory[stabilityCheckCount % PROCESS_SAMPLE_GROUP_COUNT] = rawInt;
-
-                // 平均を求める
-                auto sum = 0.0f;
-                for (auto i = 0; i < PROCESS_SAMPLE_GROUP_COUNT; i++)
-                    sum += rawIntHistory[i];
-                auto average = sum / PROCESS_SAMPLE_GROUP_COUNT;
-
-                // 分散を求める
-                sum = 0;
-                for (auto i = 0; i < PROCESS_SAMPLE_GROUP_COUNT; i++)
-                    sum += (rawIntHistory[i] - average) * (rawIntHistory[i] - average);
-                auto variance = sum / PROCESS_SAMPLE_GROUP_COUNT;
-
-                // 標準偏差を求める
-                auto standardDeviation = sqrt(variance);
-
-                // 1分以上経過しており標準偏差 0.05 未満なら安定とみなす
-                if (++stabilityCheckCount >= PROCESS_SAMPLE_GROUP_COUNT && standardDeviation < 0.05f) {
-                    isStable = true;
-                }
+            // 1分以上経過しており標準偏差 0.05 未満なら安定とみなす
+            if (!isStable && stabilityCheckCount++ >= PROCESS_SAMPLE_GROUP_COUNT && this->calcStdDev() <= 0.05f) {
+                isStable = true;
             }
 
             // 震度算出時のコールバックを呼び出し

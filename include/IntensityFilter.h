@@ -1,14 +1,16 @@
 #pragma once
 
-#include <Arduino.h>
-#include "IirFilter.h"
+#include "IIRFilter.h"
 
 /**
- * @author François LN
+ * この震度計算のためのフィルタは 特許第5946067号 の実装です。
+ * https://plidb.inpit.go.jp/pldb/html/HTML.L/2016/001/L2016001200.html
+ * このコードを使用して利益を得る場合、防災科研とのライセンス契約が必要です。
  */
 class IntensityFilter
 {
 private:
+    // HPF が 100Hz 限定のため、サンプル周波数は 100Hz に固定
     const int fs = 100;
     const float f0 = 0.45, f1 = 7.0, f2 = 0.5, f3 = 12.0, f4 = 20.0, f5 = 30.0, h2a = 1.0, h2b = 0.75, h3 = 0.9, h4 = 0.6, h5 = 0.6, g = 1.262, pi = PI;
 
@@ -17,9 +19,16 @@ private:
     IIRFilter filters[3][6];
     IIRFilter hpFilters[3];
 
-    // 2次バターワースハイパスフィルター（カットオフ0.05Hz）100Hz のサンプル周波数に対してのみ有効
+    /**
+     * 2次バターワースハイパスフィルター（カットオフ0.05Hz）
+     * 100Hz のサンプル周波数に対してのみ有効
+     * このフィルタは特許に含まれません
+     * @author François LN
+     */
     const float hpb[3] = {0.997781024102941, -1.995562048205882, 0.997781024102941};
     const float hpa[3] = {1, -1.995557124345789, 0.995566972065975};
+
+    // TODO: 所々冗長な書き方をしているが、特許の実装と比較しやすいようにあえてそのままにしている
 
     void initFilterCoefTypeA14(float *coefA, float *coefB, float hc, float fc)
     {
