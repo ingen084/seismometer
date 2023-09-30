@@ -19,7 +19,6 @@
 #define SEISMOMETER_ADC_STEP (lsm6dso.getSensitivity())
 
 void printNmea(const char *format, ...);
-void printErrorNmea(const char *id);
 void serialCommandTask(void *pvParameters);
 
 IntensityProcessor *processor;
@@ -45,7 +44,7 @@ void measureTask(void *pvParameters) {
 
         // 100Hz で動かす
         if (!xTaskDelayUntil(&xLastWakeTime, configTICK_RATE_HZ / 100)) {
-            printErrorNmea("MEASURE_DROPPED");
+            printNmea("XSERR,MEASURE_DROPPED");
         }
     }
 }

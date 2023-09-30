@@ -19,7 +19,6 @@
 #define SEISMOMETER_ADC_STEP (1.0f / (4095.0f / 5.0f) * 980.665f)
 
 void printNmea(const char *format, ...);
-void printErrorNmea(const char *id);
 void serialCommandTask(void *pvParameters);
 
 #define ADJUST_PIN D16
@@ -52,7 +51,7 @@ void measureTask(void *pvParameters) {
 
         // 100Hz で動かす
         if (!xTaskDelayUntil(&xLastWakeTime, configTICK_RATE_HZ / 100) && Serial) {
-            printErrorNmea("MEASURE_DROPPED");
+            printNmea("XSERR,MEASURE_DROPPED");
         }
     }
 }

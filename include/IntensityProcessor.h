@@ -81,7 +81,7 @@ public:
         if (sampleIndex < INTENSITY_PROCESS_SAMPLE_GROUP_SIZE)
             return;
 
-        auto us = micros();
+        // auto us = micros();
 
         // 計測震度を計算させる
         memcpy(sortedGroups[sortedGroupIndex], compositeSample, sizeof(compositeSample));

@@ -17,6 +17,8 @@
 #error "Board.h で SEISMOMETER_ADC_STEP を定義してください"
 #endif
 
+#include <SerialCommands.h>
+
 // メモ: $はつけない
 void printNmea(const char *format, ...)
 {
@@ -47,33 +49,25 @@ void printNmea(const char *format, ...)
     Serial.write(temp2);
     if (buffer != temp)
         delete[] buffer;
+    Serial.flush();
 }
-void printErrorNmea(const char *id)
-{
-    printNmea("XSEER,%s", id);
+
+char serialCommandBuffer[64];
+SerialCommands serialCommands(&Serial, serialCommandBuffer, sizeof(serialCommandBuffer), "\r\n", " ");
+
+void hwinfoCommandHandler(SerialCommands *sender) {
+    printNmea("XSHWI,1,%s;%s,%s,%s,%s,%f", APP_NAME, APP_VERSION, SEISMOMETER_DEVICE_NAME, SEISMOMETER_SENSOR_NAME, SEISMOMETER_ADC_NAME, SEISMOMETER_ADC_STEP);
 }
+SerialCommand hwinfoCommandUpper("HWINFO", hwinfoCommandHandler);
 
 void serialCommandTask(void *pvParameters) {
-    char buffer[32];
-    char bufferIndex = 0;
-
+    serialCommands.AddCommand(&hwinfoCommandUpper);
+    serialCommands.SetDefaultHandler([](SerialCommands *sender, const char *cmd) {
+        printNmea("XSERR,UNKNOWN_COMMAND,%s", cmd);
+    });
     while (1) {
         // 100Hz で動かす
         vTaskDelay(configTICK_RATE_HZ / 100);
-
-        while (Serial.available()) {
-            auto c = Serial.read();
-            if (c == '\r' || c == '\n') {
-                buffer[bufferIndex] = '\0';
-                if (strcmp(buffer, "HWINFO") == 0 || strcmp(buffer, "hwinfo") == 0)
-                    printNmea("XSHWI,1,%s;%s,%s,%s,%s,%f", APP_NAME, APP_VERSION, SEISMOMETER_DEVICE_NAME, SEISMOMETER_SENSOR_NAME, SEISMOMETER_ADC_NAME, SEISMOMETER_ADC_STEP);
-                bufferIndex = 0;
-                continue;
-            }
-            buffer[bufferIndex++] = c;
-            // 32文字を超えた場合はスルー
-            if (bufferIndex >= sizeof(buffer))
-                bufferIndex = 0;
-        }
+        serialCommands.ReadSerial();
     }
 }
