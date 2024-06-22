@@ -19,7 +19,7 @@ public:
     }
 
     float getSensitivity() {
-        return sensitivity;
+        return sensitivity * 980.665f * 0.001f;
     }
 
     void read(int16_t (&data)[3])
