@@ -88,9 +88,9 @@ PiDASPlus に存在している **`XSPGA`/`XSOFF` は実装されていません
 | -------------- | ---------- | ------- | -------- |
 | PiDAS          | KXR94-2050 | MCP3204 | 1.197393 |
 | PiDAS;PicoW    | KXR94-2050 | MCP3204 | 1.197393 |
-| EQIS-1;RP2040  | LSM6DSO    |         | 0.061    |
-| EQIS-1;ESP32C3 | LSM6DSO    |         | 0.061    |
-| EQIS-1;ESP32S3 | LSM6DSO    |         | 0.061    |
+| EQIS-1;RP2040  | LSM6DSO    |         | 0.059820 |
+| EQIS-1;ESP32C3 | LSM6DSO    |         | 0.059820 |
+| EQIS-1;ESP32S3 | LSM6DSO    |         | 0.059820 |
 
 #### `XSERR` エラー
 

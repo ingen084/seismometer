@@ -16,7 +16,7 @@
 #include "IntensityProcessor.h"
 
 // main.cpp のシリアルコマンドで使用する ADC ステップあたりの gal
-#define SEISMOMETER_ADC_STEP (lsm6dso.getSensitivity())
+#define SEISMOMETER_ADC_STEP (lsm6dso.getSensitivity() * 980.665f * 0.001f)
 
 void printNmea(const char *format, ...);
 void printErrorNmea(const char *id);
