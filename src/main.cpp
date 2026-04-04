@@ -87,7 +87,13 @@ void serialCommandTask(void *pvParameters) {
                         bufferIndex = 0;
                         continue;
                     }
-                    auto value = atoi(buffer + 9);
+                    char *endPtr;
+                    auto value = strtol(buffer + 9, &endPtr, 10);
+                    if (*endPtr != '\0') {
+                        printErrorNmea("DSPCFG_INVALID");
+                        bufferIndex = 0;
+                        continue;
+                    }
                     bool valid = false;
                     switch (cmd) {
                         case 'C': case 'c':

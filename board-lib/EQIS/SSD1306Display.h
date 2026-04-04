@@ -337,9 +337,9 @@ public:
     }
 
     // 震度表示
-    void displayIntensity(JmaIntensity scale, float rawInt, bool hideDisplay, JmaIntensity maxScale) {
+    void displayIntensity(JmaIntensity scale, float rawInt, bool hideDisplay, JmaIntensity maxScale, bool showMaxLine) {
         this->display->clearDisplay();
-		if (scale != maxScale) {
+		if (showMaxLine) {
 			this->display->setTextSize(2);
 			this->display->setCursor(3, 50);
 			this->display->println("Max: " + String(jmaIntensityToChar(maxScale)));

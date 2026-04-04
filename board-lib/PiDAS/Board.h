@@ -108,13 +108,17 @@ void ledDisplayTask(void *pvParameters) {
             continue;
         }
 
-        if (showCurrent)
+        if (showCurrent) {
             led.blinkScale(latestIntensity, showMax ? maxIntensity : latestIntensity);
-        else
+            if (showMax && frame++ % 100 <= 50 && latestIntensity < maxIntensity)
+                led.toggle(maxIntensity);
+        } else {
+            // showMax は true（false なら早期 continue 済み）
             led.clear();
-
-        if (showMax && frame++ % 100 <= 50 && latestIntensity < maxIntensity)
-            led.toggle(maxIntensity);
+            // latest == max: 常時点灯、latest < max: 点滅
+            if (latestIntensity == maxIntensity || frame++ % 100 <= 50)
+                led.toggle(maxIntensity);
+        }
     }
 }
 
