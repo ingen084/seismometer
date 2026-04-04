@@ -81,12 +81,13 @@ void serialCommandTask(void *pvParameters) {
                 else if (strcmp(buffer, "DSPCFG") == 0 || strcmp(buffer, "dspcfg") == 0)
                     printDisplayConfig();
                 else if (strncmp(buffer, "DSPCFG ", 7) == 0 || strncmp(buffer, "dspcfg ", 7) == 0) {
-                    auto cmd = buffer[7];
-                    if (buffer[8] != ' ' || buffer[9] == '\0') {
+                    // "DSPCFG X N" で最低10文字必要 (コマンド7 + サブコマンド1 + スペース1 + 値1以上)
+                    if (bufferIndex < 10 || buffer[8] != ' ') {
                         printErrorNmea("DSPCFG_INVALID");
                         bufferIndex = 0;
                         continue;
                     }
+                    auto cmd = buffer[7];
                     char *endPtr;
                     auto value = strtol(buffer + 9, &endPtr, 10);
                     if (*endPtr != '\0') {
