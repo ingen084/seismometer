@@ -76,19 +76,28 @@ void oledDisplayTask(void *pvParameters) {
         }
         
         auto latestIntensity = getJmaIntensity(rawInt);
-        if (millis() - maxIntensityAt > 60 * 10 * 1000 || maxIntensity <= latestIntensity) {
+        if (millis() - maxIntensityAt > (ulong)displayConfig.resetMinutes * 60UL * 1000UL || maxIntensity <= latestIntensity) {
             maxIntensity = latestIntensity;
             maxIntensityAt = millis();
         }
 
+        bool showCurrent = latestIntensity >= (JmaIntensity)displayConfig.currentThreshold;
+        bool showMax = maxIntensity >= (JmaIntensity)displayConfig.maxThreshold;
         // 常時表示をすると OLED の寿命が溶けるので動きがない場合は消灯させる
-        display.displayIntensity(latestIntensity, rawInt, processor->calcStdDev() <= 0.05, maxIntensity);
+        bool hideDisplay = processor->calcStdDev() <= 0.05;
+
+        display.displayIntensity(
+            latestIntensity, rawInt,
+            hideDisplay || !showCurrent,
+            showMax ? maxIntensity : latestIntensity
+        );
     }
 }
 
 
 void setup() {
     Serial.begin(115200);
+    loadDisplayConfig();
 
     displayIntensityQueue = xQueueCreate(1, sizeof(float));
     processor = new IntensityProcessor([](float sample[3]) {

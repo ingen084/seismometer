@@ -1,4 +1,4 @@
-#define APP_VERSION "0.1.1"
+#define APP_VERSION "0.2.0"
 #define APP_NAME "ingen-seismometer"
 
 #ifndef SEISMOMETER_DEVICE_NAME
@@ -9,6 +9,10 @@
 #endif
 #ifndef SEISMOMETER_ADC_NAME
 #error "platformio.ini で、現在のプロファイルに対する SEISMOMETER_ADC_NAME を定義してください"
+#endif
+
+#ifdef SEISMOMETER_HAS_DISPLAY
+#include "DisplayConfig.h"
 #endif
 
 #include <Board.h>
@@ -53,6 +57,12 @@ void printErrorNmea(const char *id)
     printNmea("XSEER,%s", id);
 }
 
+#ifdef SEISMOMETER_HAS_DISPLAY
+void printDisplayConfig() {
+    printNmea("XSCFG,DSP,%d,%d,%d", displayConfig.currentThreshold, displayConfig.maxThreshold, displayConfig.resetMinutes);
+}
+#endif
+
 void serialCommandTask(void *pvParameters) {
     char buffer[32];
     char bufferIndex = 0;
@@ -67,6 +77,46 @@ void serialCommandTask(void *pvParameters) {
                 buffer[bufferIndex] = '\0';
                 if (strcmp(buffer, "HWINFO") == 0 || strcmp(buffer, "hwinfo") == 0)
                     printNmea("XSHWI,1,%s;%s,%s,%s,%s,%f", APP_NAME, APP_VERSION, SEISMOMETER_DEVICE_NAME, SEISMOMETER_SENSOR_NAME, SEISMOMETER_ADC_NAME, SEISMOMETER_ADC_STEP);
+#ifdef SEISMOMETER_HAS_DISPLAY
+                else if (strcmp(buffer, "DSPCFG") == 0 || strcmp(buffer, "dspcfg") == 0)
+                    printDisplayConfig();
+                else if (strncmp(buffer, "DSPCFG ", 7) == 0 || strncmp(buffer, "dspcfg ", 7) == 0) {
+                    auto cmd = buffer[7];
+                    if (buffer[8] != ' ' || buffer[9] == '\0') {
+                        printErrorNmea("DSPCFG_INVALID");
+                        bufferIndex = 0;
+                        continue;
+                    }
+                    auto value = atoi(buffer + 9);
+                    bool valid = false;
+                    switch (cmd) {
+                        case 'C': case 'c':
+                            if (value >= 0 && value <= 9) {
+                                displayConfig.currentThreshold = value;
+                                valid = true;
+                            }
+                            break;
+                        case 'M': case 'm':
+                            if (value >= 0 && value <= 9) {
+                                displayConfig.maxThreshold = value;
+                                valid = true;
+                            }
+                            break;
+                        case 'R': case 'r':
+                            if (value >= 1 && value <= 1440) {
+                                displayConfig.resetMinutes = value;
+                                valid = true;
+                            }
+                            break;
+                    }
+                    if (valid) {
+                        saveDisplayConfig();
+                        printDisplayConfig();
+                    } else {
+                        printErrorNmea("DSPCFG_INVALID");
+                    }
+                }
+#endif
                 bufferIndex = 0;
                 continue;
             }

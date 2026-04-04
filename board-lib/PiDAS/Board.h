@@ -95,13 +95,25 @@ void ledDisplayTask(void *pvParameters) {
         }
 
         auto latestIntensity = getJmaIntensity(rawInt);
-        if (millis() - maxIntensityAt > 60 * 10 * 1000 || maxIntensity <= latestIntensity) {
+        if (millis() - maxIntensityAt > (ulong)displayConfig.resetMinutes * 60UL * 1000UL || maxIntensity <= latestIntensity) {
             maxIntensity = latestIntensity;
             maxIntensityAt = millis();
         }
 
-        led.blinkScale(latestIntensity, maxIntensity);
-        if (frame++ % 100 <= 50 && latestIntensity < maxIntensity)
+        bool showCurrent = latestIntensity >= (JmaIntensity)displayConfig.currentThreshold;
+        bool showMax = maxIntensity >= (JmaIntensity)displayConfig.maxThreshold;
+
+        if (!showCurrent && !showMax) {
+            led.clear();
+            continue;
+        }
+
+        if (showCurrent)
+            led.blinkScale(latestIntensity, showMax ? maxIntensity : latestIntensity);
+        else
+            led.clear();
+
+        if (showMax && frame++ % 100 <= 50 && latestIntensity < maxIntensity)
             led.toggle(maxIntensity);
     }
 }
@@ -109,6 +121,7 @@ void ledDisplayTask(void *pvParameters) {
 void setup() {
     Serial.begin(115200);
     pinMode(ADJUST_PIN, INPUT_PULLDOWN);
+    loadDisplayConfig();
 
     displayIntensityQueue = xQueueCreate(1, sizeof(float));
     processor = new IntensityProcessor([](float sample[3]) {
