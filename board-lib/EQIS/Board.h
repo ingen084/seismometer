@@ -82,7 +82,7 @@ void oledDisplayTask(void *pvParameters) {
         }
 
         bool showCurrent = latestIntensity >= (JmaIntensity)displayConfig.currentThreshold;
-        bool showMax = maxIntensity >= (JmaIntensity)displayConfig.maxThreshold;
+        bool showMax = maxIntensity > JMA_INT_0 && maxIntensity >= (JmaIntensity)displayConfig.maxThreshold;
         // 常時表示をすると OLED の寿命が溶けるので動きがない場合は消灯させる
         bool hideDisplay = processor->calcStdDev() <= 0.05;
         bool effectiveHide = hideDisplay || !showCurrent;
