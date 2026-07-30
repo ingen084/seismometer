@@ -96,7 +96,7 @@ public:
             int maxIndex = 0;
             for (auto g = 0; g < PROCESS_SAMPLE_GROUP_COUNT; g++) {
                 auto v = sortedGroups[g][INTENSITY_PROCESS_SAMPLE_GROUP_SIZE - (sortedGroupIndice[g] + 1)];
-                if (v != NAN && max < v) {
+                if (!isnan(v) && max < v) {
                     max = v;
                     maxIndex = g;
                 }
