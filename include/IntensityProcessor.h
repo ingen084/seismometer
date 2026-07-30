@@ -95,6 +95,9 @@ public:
             float max = 0;
             int maxIndex = 0;
             for (auto g = 0; g < PROCESS_SAMPLE_GROUP_COUNT; g++) {
+                // 使い切ったグループを選ぶと添字が負になり、隣の値を二重に数えてしまう
+                if (sortedGroupIndice[g] >= INTENSITY_PROCESS_SAMPLE_GROUP_SIZE)
+                    continue;
                 auto v = sortedGroups[g][INTENSITY_PROCESS_SAMPLE_GROUP_SIZE - (sortedGroupIndice[g] + 1)];
                 if (!isnan(v) && max < v) {
                     max = v;
