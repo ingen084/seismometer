@@ -21,7 +21,7 @@ class IntensityProcessor {
 
     // float hpFilteredSample[INTENSITY_PROCESS_SAMPLE_GROUP_SIZE];
     float compositeSample[INTENSITY_PROCESS_SAMPLE_GROUP_SIZE];
-    float sortedGroups[PROCESS_SAMPLE_GROUP_COUNT][INTENSITY_PROCESS_SAMPLE_GROUP_SIZE];
+    float sortedGroups[PROCESS_SAMPLE_GROUP_COUNT][INTENSITY_PROCESS_SAMPLE_GROUP_SIZE] = {};
     char sortedGroupIndice[PROCESS_SAMPLE_GROUP_COUNT];
     
     ushort sampleIndex = 0;
@@ -29,7 +29,7 @@ class IntensityProcessor {
 
     IntensityFilter filter;
 
-    float rawIntHistory[PROCESS_SAMPLE_GROUP_COUNT];
+    float rawIntHistory[PROCESS_SAMPLE_GROUP_COUNT] = {};
     unsigned int rawIntIndex = 0;
     unsigned int stabilityCheckCount = 0;
     bool isStable = false;
@@ -95,8 +95,11 @@ public:
             float max = 0;
             int maxIndex = 0;
             for (auto g = 0; g < PROCESS_SAMPLE_GROUP_COUNT; g++) {
+                // 使い切ったグループを選ぶと添字が負になり、隣の値を二重に数えてしまう
+                if (sortedGroupIndice[g] >= INTENSITY_PROCESS_SAMPLE_GROUP_SIZE)
+                    continue;
                 auto v = sortedGroups[g][INTENSITY_PROCESS_SAMPLE_GROUP_SIZE - (sortedGroupIndice[g] + 1)];
-                if (v != NAN && max < v) {
+                if (!isnan(v) && max < v) {
                     max = v;
                     maxIndex = g;
                 }
