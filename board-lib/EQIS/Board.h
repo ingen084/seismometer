@@ -133,7 +133,6 @@ void setup() {
     });
 
 #ifdef ESP32
-    // FIFO の読み出しと補間の分を含めて、実測で 4096 では残り 1.3KB ほどだったため余裕を持たせる
     xTaskCreatePinnedToCore(measureTask, "Measure", 6144, NULL, 10, NULL, 0x01);
     xTaskCreatePinnedToCore(oledDisplayTask, "OLEDDisplay", 4096, NULL, 5, NULL, 0x01);
     xTaskCreatePinnedToCore(serialCommandTask, "Serial", 4096, NULL, 5, NULL, 0x01);
