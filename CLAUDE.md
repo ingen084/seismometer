@@ -57,7 +57,7 @@ Raw Sensor (100Hz)
 
 ### FreeRTOSタスク構成 (全ボード共通)
 
-- **measureTask** (優先度10): センサー読み取り → `processor.process()` 呼び出し (100Hz)
+- **measureTask** (優先度10): センサー読み取り → `processor.process()` 呼び出し (100Hz)。EQISは10msごとにLSM6DSOのFIFOを読み、内蔵タイムスタンプを使ってマイコンの時計で正確な100Hzに線形補間してから渡す。ループが遅れてもFIFO (約2秒分) が吸収し、`MEASURE_DROPPED` はFIFOのあふれやタイムスタンプの飛びでデータが欠けたときだけ出す
 - **displayTask** (優先度4-5): キュー経由で震度受信 → LED/OLED更新
 - **serialCommandTask** (優先度5): USBシリアルでHWINFO・DSPCFGコマンド処理
 
@@ -72,6 +72,8 @@ Raw Sensor (100Hz)
   - `DisplayConfig.h` — 表示設定（閾値・リセット時間）の構造体・EEPROM永続化
 - `board-lib/PiDAS/` — Raspberry Pi Pico向け (MCP3204 SPI ADC, 10連LED表示)
 - `board-lib/EQIS/` — Seeed XIAO向け (LSM6DSO I2C加速度センサー, SSD1306 OLED表示)
+  - `LSM6DSO.h` — センサーの初期化とFIFO読み出し。加速度を全サンプルFIFOに格納し、同じ頻度で内蔵タイムスタンプ (公称25μs刻み) も格納する設定にしている。直前に読んだタイムスタンプをそのサンプルの時刻として扱う
+  - `Resampler.h` — `SensorClock` (内蔵タイムスタンプとマイコンの時計の比を最大16秒の差から推定) と `Resampler` (タイムスタンプ付きサンプルを一定間隔に線形補間)
 
 ### ボード固有コードの切り替え
 
@@ -101,3 +103,4 @@ Raw Sensor (100Hz)
 - 震度算出は特許技術(#5946067)を使用。非営利個人利用は問題ないが、商用利用にはライセンス契約が必要。
 - ESP32C3/S3は実験的サポート。USBシリアル切断で数秒後にリセットされる既知問題あり。
 - 安定性判定完了前（起動後60秒未満）は震度として `nan` を出力する。
+- LSM6DSOの加速度は `Set_X_ODR(100)` で104Hz設定になるが、内蔵発振器の個体差で実際の周波数がずれる (実測した2台では約110.2Hz (+5.8%) と約106.4Hz (+2.2%))。`INTERNAL_FREQ_FINE` (0x63) から求めた補正値は実測と1.7ポイント食い違ったため (110.2Hzの個体)、補正には使わず内蔵タイムスタンプで実測している。
